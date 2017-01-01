@@ -14,26 +14,21 @@ var http = require('http');
  *  stop
  *  play
  */
-var ex = module.exports = function() {
+var exports = module.exports = function() {
 	/* options passed to vlc when it is started, and the location of the executable */
 	options = {
 		player: '/usr/bin/cvlc',
 		communication: 'http',
-		port : '8080',
+		port : '9090',
 		password: 'password'
 	};
 
-	/* puts the arguments to vlc in proper format */
+	/* puts the arguments to vlc process in proper format */
     var pargs = [];
 
     if (options.communication !== undefined) {
 		pargs.push('-I');
 		pargs.push(options.communication);
-	}
-
-	if (options.port !== undefined) {
-		pargs.push('--http-port');
-		pargs.push(options.port);
 	}
 
 	if (options.port !== undefined) {
@@ -56,9 +51,10 @@ var ex = module.exports = function() {
 
 	//for now, send stdout to console.log
 	player.stdout.on('data', function(data) {
-		console.log('ERROR ' + data);
+		console.log('OUT ' + data);
 	});
     
+    /* externally accessible */
     return {
         options: options,
         _player: player,
@@ -76,8 +72,9 @@ var ex = module.exports = function() {
                 apiCall(options, 'pl_play', {}, media);
             } else {
                 apiCall(options, 'in_play', {
-                        input: media
-                    }, cb);
+                    input: media
+                    }
+                , cb);
             }
         }
     };
