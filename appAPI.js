@@ -4,6 +4,9 @@ var app = express();
 var VLC = require('./vlcAPI.js');
 var player = new VLC();
 
+var fileBrowser = require('./fileBrowser.js');
+var fb = new fileBrowser();
+
 app.get('/command/play', function (req, res) {
     console.log("received play command");
     player.play("/home/daniel/Videos/test.avi", function () {
@@ -23,6 +26,14 @@ app.get('/command/stop', function (req, res) {
         console.log("stop command sent");
     });
     res.send();
+});
+
+app.get('/browse', function (req, res) {
+    console.log("received browse command");
+    fb.browse('.', function (retVal) {
+        console.log(retVal);
+        res.send(retVal);
+    });
 });
 
 
