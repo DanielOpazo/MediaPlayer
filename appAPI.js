@@ -8,8 +8,8 @@ var fileBrowser = require('./fileBrowser.js');
 var fb = new fileBrowser();
 
 app.get('/command/play', function (req, res) {
-    console.log("received play command");
-    player.play("/home/daniel/Videos/test.avi", function () {
+    console.log("received play command with url parameter media =" + req.query.media);
+    player.play(req.query.media, function () {
         console.log("play command sent");
     });
     res.send();
@@ -29,10 +29,11 @@ app.get('/command/stop', function (req, res) {
 });
 
 app.get('/browse', function (req, res) {
-    console.log("received browse command");
-    fb.browse('.', function (retVal) {
+    console.log("received browse command with url parameter dir = " + req.query.dir);
+    //should probably validate the path somehow, It should be validated at the fileBrowser.js level though
+    fb.browse(req.query.dir, function (retVal) {
         console.log(retVal);
-        res.send(retVal);
+        res.json(retVal);
     });
 });
 

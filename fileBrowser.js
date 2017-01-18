@@ -18,6 +18,10 @@ function validFile(file) {
     return extensionPatt.test(file);
 }
 
+function resetFileList () {
+    fileList = {};
+}
+
 /* depth first recursive file list
  * goDeeper controls if subdirectories should be followed or not.
  * if it's false, it will simply add the directory, just like it lists files
@@ -87,6 +91,7 @@ function handleFiles(dir, files, goDeeper, cb) {
 var exports = module.exports = function() {
     return {
         browse: function (dir, cb) {
+                    resetFileList();
                     parseDir(dir, false, function (err) {
                         if (err)
                             console.error(fileList);
@@ -97,9 +102,3 @@ var exports = module.exports = function() {
                 }
     }
 }
-/*
-startBrowsing('.', function(retVal) {
-    console.log(retVal);
-});
-*/
-
