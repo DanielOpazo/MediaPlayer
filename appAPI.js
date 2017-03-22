@@ -43,6 +43,14 @@ app.get('/command/discover', function (req, res) {
     res.send("Daniel Media Player");
 });
 
+app.get('/command/fullscreen', function (req, res) {
+    console.log("received fullscreen command from " + req.ip);
+    player.fullscreen(function () {
+        console.log("fullscreen command sent");
+    });
+    res.send();
+});
+
 app.get('/browse', function (req, res) {
     console.log("received browse command from " + req.ip + " with url parameter dir = " + req.query.dir);
     //should probably validate the path somehow, It should be validated at the fileBrowser.js level though
