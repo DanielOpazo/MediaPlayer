@@ -144,9 +144,7 @@ function handleFiles(dir, files, goDeeper, cb) {
                         //add the directory to the directoryList, then move on without going into the directory
                         //skip hidden folders
                         if (file[0] != '.') {
-                            console.log("made it here in folder is: " + file);
                             getNumItemsInDir(p, function(numItems) {
-                                console.log("num items is: " + numItems);
                                 //no full paths for now
                                 //if I want to use variables for my keys, I have to do this stupid
                                 //multiline assignment to the object

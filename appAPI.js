@@ -9,15 +9,23 @@ var fb = new fileBrowser();
 
 app.get('/command/play', function (req, res) {
     console.log("received play command from " + req.ip + " with url parameter media =" + req.query.media);
-    player.play(req.query.media, function () {
+    player.play(req.query.media, function (vlcRes) {
         console.log("play command sent");
+    });
+    res.send();
+});
+
+app.get('/command/seek', function (req, res) {
+    console.log("received seek command from " + req.ip + " with url parameter seconds =" + req.query.seconds);
+    player.seek(req.query.seconds, function (vlcRes) {
+        console.log("seek command sent");
     });
     res.send();
 });
 
 app.get('/command/pause', function (req, res) {
     console.log("received pause command from " + req.ip);
-    player.pause(function() {
+    player.pause(function(vlcRes) {
         console.log("pause command sent");
     });
     res.send();
@@ -25,7 +33,7 @@ app.get('/command/pause', function (req, res) {
 
 app.get('/command/stop', function (req, res) {
     console.log("received stop command from " + req.ip);
-    player.stop(function () {
+    player.stop(function (vlcRes) {
         console.log("stop command sent");
     });
     res.send();
@@ -45,8 +53,16 @@ app.get('/command/discover', function (req, res) {
 
 app.get('/command/fullscreen', function (req, res) {
     console.log("received fullscreen command from " + req.ip);
-    player.fullscreen(function () {
+    player.fullscreen(function (vlcRes) {
         console.log("fullscreen command sent");
+    });
+    res.send();
+});
+
+app.get('/command/emptyPlaylist', function (req, res) {
+    console.log("received emptyPlaylist command from " + req.ip);
+    player.emptyPlaylist(function (vlcRes) {
+        console.log("emptyPlaylist command sent");
     });
     res.send();
 });

@@ -77,6 +77,15 @@ var exports = module.exports = function() {
         },
         fullscreen: function(cb) {
             apiCall(options, 'fullscreen', {}, cb);
+        },
+        emptyPlaylist: function(cb) {//basically stop
+            apiCall(options, 'pl_empty', {}, cb);
+        },
+        seek: function(seconds, cb) {
+            apiCall(options, 'seek', {
+                val: seconds
+                }
+            , cb);
         }
     };
 };
