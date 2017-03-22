@@ -61,21 +61,22 @@ var exports = module.exports = function() {
         close: function() {
             player.kill();
         },
-        pause: function (cb) {
+        pause: function(cb) { //this is a toggle. to resume, send same request
                 apiCall(options, 'pl_pause', {}, cb);
         },
-        stop: function (cb) {
+        stop: function(cb) {
             apiCall(options, 'pl_stop', {}, cb);
         },
         play: function(media, cb) {
-            if (cb === undefined) {
-                apiCall(options, 'pl_play', {}, media);
-            } else {
+            if (cb !== undefined) {
                 apiCall(options, 'in_play', {
                     input: media
                     }
                 , cb);
             }
+        },
+        fullscreen: function(cb) {
+            apiCall(options, 'fullscreen', {}, cb);
         }
     };
 };
@@ -96,12 +97,7 @@ function apiCall(options, command, args, callback) {
 		urlArgs = '&' + encodeURIComponent(key) + '=' + encodeURIComponent(args[key]);
 	}
 
-	if (command !== undefined) {
-		command = '?command=' + command;
-	}else { //this should be handled better
-		console.log('ERROR command is undefined');
-		return;
-	}
+    command = '?command=' + command;
 	
 	//debug	
 	console.log(command + urlArgs);

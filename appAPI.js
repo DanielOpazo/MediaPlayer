@@ -17,6 +17,9 @@ app.get('/command/play', function (req, res) {
 
 app.get('/command/pause', function (req, res) {
     console.log("received pause command from " + req.ip);
+    player.pause(function() {
+        console.log("pause command sent");
+    });
     res.send();
 });
 
@@ -25,6 +28,13 @@ app.get('/command/stop', function (req, res) {
     player.stop(function () {
         console.log("stop command sent");
     });
+    res.send();
+});
+
+app.get('/command/close', function (req, res) {
+    console.log("received close command from " + req.ip);
+    player.close();
+    console.log("close command sent");
     res.send();
 });
 
