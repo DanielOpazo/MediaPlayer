@@ -86,6 +86,18 @@ var exports = module.exports = function() {
                 val: seconds
                 }
             , cb);
+        },
+        status: function(cb) { //not sure how frequently this should be queried
+            apiCall(options, '', {}, function(res) { //might need to handle an error here if vlc isn't running
+                var full = '';
+                res.on('data', function(data) {
+                    full += data.toString();
+                });
+                
+                res.on('end', function(e) {
+                    cb(JSON.parse(full));
+                });
+            });
         }
     };
 };

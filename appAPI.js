@@ -67,6 +67,15 @@ app.get('/command/emptyPlaylist', function (req, res) {
     res.send();
 });
 
+app.get('/command/status', function (req, res) {
+    console.log("received status command from " + req.ip);
+    player.status(function (status) {
+        console.log(status);
+        console.log("status command sent");
+        res.send(status)
+    });
+});
+
 app.get('/browse', function (req, res) {
     console.log("received browse command from " + req.ip + " with url parameter dir = " + req.query.dir);
     //should probably validate the path somehow, It should be validated at the fileBrowser.js level though
