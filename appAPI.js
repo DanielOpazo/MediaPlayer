@@ -7,6 +7,8 @@ var player = new VLC();
 var fileBrowser = require('./fileBrowser.js');
 var fb = new fileBrowser();
 
+var os = require("os");
+
 app.get('/command/play', function (req, res) {
     console.log("received play command from " + req.ip + " with url parameter media =" + req.query.media);
     player.play(req.query.media, function (vlcRes) {
@@ -48,7 +50,8 @@ app.get('/command/close', function (req, res) {
 
 app.get('/command/discover', function (req, res) {
     console.log("received discover command from " + req.ip);
-    res.send("Daniel Media Player");
+    var obj = {};
+    res.json({name: os.hostname(), home: os.homedir()});
 });
 
 app.get('/command/fullscreen', function (req, res) {
