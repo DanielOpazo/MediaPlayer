@@ -57,7 +57,7 @@ function getMediaFileDuration(filePath, cb) {
 
 //checks the file extension against the list of allowed filetypes
 function validFile(file) {
-    var extensionPatt = /\.mp4|mkv|avi|js$/i;
+    var extensionPatt = /\.mp4|mkv|avi$/i;
     return extensionPatt.test(file);
 }
 

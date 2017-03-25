@@ -8,6 +8,33 @@ var fileBrowser = require('./fileBrowser.js');
 var fb = new fileBrowser();
 
 var os = require("os");
+var nif = os.networkInterfaces();
+
+function getIPv4Address() {
+    var ipv4address = "";
+    Object.keys(nif).forEach(function (nifName) {
+        var alias = 0;
+
+        nif[nifName].forEach(function (niface) {
+            if ('IPv4' !== niface.family || niface.internal !== false)
+                return;
+
+            if (alias >= 1) {
+                console.log(nifName + ':' + alias, niface.address);
+                console.log("ERROR unusual network configuration");
+            }
+            else
+                ipv4address = (nifName, niface.address);
+            alias++;
+        });
+    });
+    return ipv4address;
+}
+
+app.get('/command/interfaces', function (req, res) {
+    getIPv4Address();
+    res.send();
+});
 
 app.get('/command/play', function (req, res) {
     console.log("received play command from " + req.ip + " with url parameter media =" + req.query.media);
@@ -51,7 +78,7 @@ app.get('/command/close', function (req, res) {
 app.get('/command/discover', function (req, res) {
     console.log("received discover command from " + req.ip);
     var obj = {};
-    res.json({name: os.hostname(), home: os.homedir()});
+    res.json({name: os.hostname(), home: os.homedir(), address: getIPv4Address()});
 });
 
 app.get('/command/fullscreen', function (req, res) {
