@@ -14,6 +14,7 @@ var http = require('http');
  *  stop
  *  play
  */
+
 var exports = module.exports = function() {
 	/* options passed to vlc when it is started, and the location of the executable */
 	options = {
@@ -74,6 +75,9 @@ var exports = module.exports = function() {
                     }
                 , cb);
             }
+            setTimeout(function() { //I don't like relying on timers
+                apiCall(options, 'fullscreen', {}, undefined);
+            }, 500);
         },
         fullscreen: function(cb) {
             apiCall(options, 'fullscreen', {}, cb);

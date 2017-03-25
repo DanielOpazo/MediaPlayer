@@ -73,7 +73,6 @@ app.get('/command/emptyPlaylist', function (req, res) {
 app.get('/command/status', function (req, res) {
     console.log("received status command from " + req.ip);
     player.status(function (status) {
-        console.log(status);
         console.log("status command sent");
         res.send(status)
     });
