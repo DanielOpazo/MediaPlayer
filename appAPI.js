@@ -79,6 +79,14 @@ app.get('/command/status', function (req, res) {
     });
 });
 
+app.get('/command/volume', function (req, res) {//this needs validation to not set volume above 512
+    console.log("received volume command from " + req.ip);
+    player.volume(req.query.val, function (vlcRes) {
+        console.log("volume command sent");
+    });
+    res.send();
+});
+
 app.get('/browse', function (req, res) {
     console.log("received browse command from " + req.ip + " with url parameter dir = " + req.query.dir);
     //should probably validate the path somehow, It should be validated at the fileBrowser.js level though

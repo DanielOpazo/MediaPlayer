@@ -98,6 +98,12 @@ var exports = module.exports = function() {
                     cb(JSON.parse(full));
                 });
             });
+        },
+        volume: function(vol, cb) {
+            apiCall(options, 'volume', {
+                val: vol
+                }
+            , cb);
         }
     };
 };
