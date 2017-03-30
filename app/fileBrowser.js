@@ -1,6 +1,7 @@
 var fs = require("fs");
 var path = require("path");
 var ffmpeg = require('fluent-ffmpeg');
+var async = require("async");
 
 /*
  * Schema definitions
@@ -77,8 +78,31 @@ function getNumItemsInDir(dirPath, cb) {
     fs.readdir(dirPath, function (err, files) {
         if (err)
             cb(err);
-        else
-            cb(files.length);
+        else {
+            var count = 0;
+            async.each(files, function (fileName, callback) {
+                var p = path.join(dirPath, fileName);
+                fs.stat(p, function (err, stats) {
+                    if (err)
+                        callback(err);
+                    else {
+                        if (stats.isDirectory() && fileName[0] != '.') {
+                            count++;
+                        }else {
+                            if (validFile(fileName))
+                                count++;
+                        }
+                    }
+                    callback();
+                });
+            }, function (err) {
+                if (err)
+                    cb(err)
+                else {
+                    cb(count);
+                }
+            });
+        }
     });
 }
 
