@@ -7,6 +7,16 @@ var child_process = require('child_process');
 /* http is used to communicate with VLCs API */
 var http = require('http');
 
+
+/* Globals */
+/* options passed to vlc when it is started, and the location of the executable */
+options = {
+	player: '/usr/bin/cvlc',
+	communication: 'http',
+	port : '9090',
+	password: 'password'
+};
+
 /* module.exports allows this function to be called from another file
  * each command is returned as the value in an array, where the key is the name of the command
  * supported commands are:
@@ -15,16 +25,11 @@ var http = require('http');
  *  play
  */
 
-var exports = module.exports = function() {
-	/* options passed to vlc when it is started, and the location of the executable */
-	options = {
-		player: '/usr/bin/cvlc',
-		communication: 'http',
-		port : '9090',
-		password: 'password'
-	};
-
-	/* puts the arguments to vlc process in proper format */
+/*
+ * initialize vlc in a subprocess, and return the vlc instance object
+ */
+function startVlc() {
+    /* puts the arguments to vlc process in proper format */
     var pargs = [];
 
     if (options.communication !== undefined) {
@@ -42,7 +47,7 @@ var exports = module.exports = function() {
 		pargs.push(options.password);
 	}
 
-	/* start the vlc process */
+    /* start the vlc process */
 	var player = child_process.spawn(options.player, pargs);
 
 	//for now, send stderr to console.log
@@ -54,7 +59,67 @@ var exports = module.exports = function() {
 	player.stdout.on('data', function(data) {
 		console.log('OUT ' + data);
 	});
-    
+
+    return player;
+}
+
+/* functions that talk to VLC   */
+
+function close (player) {
+    player.kill();
+}
+
+/* toggle pause/play */
+function pause (cb) {
+    apiCall(options, 'pl_pause', {}, cb);
+}
+
+function stop (cb) {
+    apiCall(options, 'pl_stop', {}, cb);
+}
+
+function play (media, cb) {
+    if (cb !== undefined) {
+        apiCall(options, 'in_play', { input: media }, cb);
+    }
+    setTimeout(function() { //I don't like relying on timers
+        apiCall(options, 'fullscreen', {}, undefined);
+    }, 500);
+}
+
+function fullscreen (cb) {
+    apiCall(options, 'fullscreen', {}, cb);
+}
+
+function emptyPlaylist(cb) {//basically stop
+    apiCall(options, 'pl_empty', {}, cb);
+}
+
+function seek (seconds, cb) {
+    apiCall(options, 'seek', { val: seconds }, cb);
+}
+
+function status (cb) { //not sure how frequently this should be queried
+    apiCall(options, '', {}, function(res) { //need to handle an error here if vlc isn't running
+        var full = '';
+        res.on('data', function(data) {
+            full += data.toString();
+        });
+        
+        res.on('end', function(e) {
+            cb(JSON.parse(full));
+        });
+    });
+}
+
+function volume (vol, cb) {
+    apiCall(options, 'volume', { val: vol }, cb);
+}
+
+var exports = module.exports = function() {
+
+    var player = startVlc();
+
     /* externally accessible */
     return {
         options: options,
@@ -62,53 +127,14 @@ var exports = module.exports = function() {
         close: function() {
             player.kill();
         },
-        pause: function(cb) { //this is a toggle. to resume, send same request
-                apiCall(options, 'pl_pause', {}, cb);
-        },
-        stop: function(cb) {
-            apiCall(options, 'pl_stop', {}, cb);
-        },
-        play: function(media, cb) {
-            if (cb !== undefined) {
-                apiCall(options, 'in_play', {
-                    input: media
-                    }
-                , cb);
-            }
-            setTimeout(function() { //I don't like relying on timers
-                apiCall(options, 'fullscreen', {}, undefined);
-            }, 500);
-        },
-        fullscreen: function(cb) {
-            apiCall(options, 'fullscreen', {}, cb);
-        },
-        emptyPlaylist: function(cb) {//basically stop
-            apiCall(options, 'pl_empty', {}, cb);
-        },
-        seek: function(seconds, cb) {
-            apiCall(options, 'seek', {
-                val: seconds
-                }
-            , cb);
-        },
-        status: function(cb) { //not sure how frequently this should be queried
-            apiCall(options, '', {}, function(res) { //might need to handle an error here if vlc isn't running
-                var full = '';
-                res.on('data', function(data) {
-                    full += data.toString();
-                });
-                
-                res.on('end', function(e) {
-                    cb(JSON.parse(full));
-                });
-            });
-        },
-        volume: function(vol, cb) {
-            apiCall(options, 'volume', {
-                val: vol
-                }
-            , cb);
-        }
+        pause: pause,
+        stop: stop,
+        play: play,
+        fullscreen: fullscreen,
+        emptyPlaylist: emptyPlaylist,
+        seek: seek,
+        status: status,
+        volume: volume
     };
 };
 
@@ -140,7 +166,7 @@ function apiCall(options, command, args, callback) {
 		path: '/requests/status.json' + command + urlArgs,
 		auth: ':' + options.password,
 		agent: false
-	}, function (res) {
+	}, function (res) {//this needs to handle the error if vlc isn't running
 		if (callback !== undefined) {
 			callback(res);
 		}

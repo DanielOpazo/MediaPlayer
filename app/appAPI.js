@@ -4,8 +4,7 @@ var app = express();
 var VLC = require('./vlcAPI.js');
 var player = new VLC();
 
-var fileBrowser = require('./fileBrowser.js');
-var fb = new fileBrowser();
+const fb = require('./fileBrowser.js');
 
 var os = require("os");
 var nif = os.networkInterfaces();

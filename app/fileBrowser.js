@@ -195,24 +195,22 @@ function handleFiles(dir, files, goDeeper, cb) {
     }
 }
 
+function browse(dir, cb) {
+    resetLists();
+    parseDir(dir, false, function (err) {
+        if (err)
+            console.error("Error parsing directory: " + dir);
+        else {
+            var dirInfo = {};
+            dirInfo[FOLDERS_KEY] = directoryList;
+            dirInfo[VIDEOS_KEY] = fileList;
+            cb(dirInfo);
+        }
+    });
+}
+
 /*
  * externally visible function. Called in appAPI.js when a GET request to
  * /browse is made
  */
-var exports = module.exports = function() {
-    return {
-        browse: function (dir, cb) {
-                    resetLists();
-                    parseDir(dir, false, function (err) {
-                        if (err)
-                            console.error("Error parsing directory: " + dir);
-                        else {
-                            var dirInfo = {};
-                            dirInfo[FOLDERS_KEY] = directoryList;
-                            dirInfo[VIDEOS_KEY] = fileList;
-                            cb(dirInfo);
-                        }
-                    });
-                }
-    }
-}
+module.exports.browse = browse;
