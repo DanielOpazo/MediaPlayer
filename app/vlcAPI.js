@@ -116,28 +116,16 @@ function volume (vol, cb) {
     apiCall(options, 'volume', { val: vol }, cb);
 }
 
-var exports = module.exports = function() {
-
-    var player = startVlc();
-
-    /* externally accessible */
-    return {
-        options: options,
-        _player: player,
-        close: function() {
-            player.kill();
-        },
-        pause: pause,
-        stop: stop,
-        play: play,
-        fullscreen: fullscreen,
-        emptyPlaylist: emptyPlaylist,
-        seek: seek,
-        status: status,
-        volume: volume
-    };
-};
-
+/* externally visible functions */
+module.exports.emptyPlaylist = emptyPlaylist;
+module.exports.fullscreen = fullscreen;
+module.exports.startVlc = startVlc
+module.exports.pause = pause;
+module.exports.play = play;
+module.exports.seek = seek;
+module.exports.status = status;
+module.exports.stop = stop;
+module.exports.volume = volume;
 
 /* Call the vlc api
  * @param {options} options "The options to configure the vlc http server"
