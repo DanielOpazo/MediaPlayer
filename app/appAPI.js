@@ -9,6 +9,18 @@ const vlc = require('./vlcAPI.js');
 var player = vlc.startVlc();
 
 
+/* This seems fairly robust. It kills vlc, and exits normally, eg. closing the server */
+process.on('SIGINT', function ()  {
+    console.log('Received SIGINT. Killing VLC process.');
+    player.kill('SIGINT');
+    process.exit();
+});
+
+process.on('exit', function (code) {
+  console.log(`About to exit with code: ${code}`);
+});
+
+
 const fb = require('./fileBrowser.js');
 
 var os = require("os");
@@ -127,7 +139,7 @@ app.get('/command/volume', function (req, res) {//this needs validation to not s
 });
 
 function startServer(port) {
-    var server = app.listen(8081, function() {
+    var server = app.listen(8081, function() { //what if this fails?
         var host = server.address().address;
         var port = server.address().port;
         console.log("Server listening at http://%s:%s", host, port);
