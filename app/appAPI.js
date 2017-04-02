@@ -50,9 +50,14 @@ function getIPv4Address() {
 app.get('/browse', function (req, res) {
     console.log("received browse command from " + req.ip + " with url parameter dir = " + req.query.dir);
     //should probably validate the path somehow, It should be validated at the fileBrowser.js level though
-    fb.browse(req.query.dir, function (retVal) {
-        console.log(retVal);
-        res.json(retVal);
+    fb.browse(req.query.dir, function browseDir (err, retVal) {
+        if (err) {
+            console.log("error browsing directory: " + req.query.dir);
+            //res.error or something
+        } else {
+            console.log(retVal);
+            res.json(retVal);
+        }
     });
 });
 

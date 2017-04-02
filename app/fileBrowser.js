@@ -39,6 +39,7 @@ var directoryList = [];
  * @param filePath (string) path to file to be queried
  * @param cb (function) callback function that is passed the metadata object
 */
+//doesn't handle error
 function getMetaData(filePath, cb) {
     ffmpeg.ffprobe(filePath, function(err, metadata) {
         cb(metadata);
@@ -50,6 +51,7 @@ function getMetaData(filePath, cb) {
  * @param filePath (string) path to file to be queried
  * @param cb (function) callback function that is passed the file length (in seconds)
 */
+//doesn't handle error
 function getMediaFileDuration(filePath, cb) {
     getMetaData(filePath, function(metadata) {
         cb(metadata["format"]["duration"]);
@@ -57,6 +59,7 @@ function getMediaFileDuration(filePath, cb) {
 }
 
 //checks the file extension against the list of allowed filetypes
+//what if file is null here
 function validFile(file) {
     var extensionPatt = /\.mp4|mkv|avi$/i;
     return extensionPatt.test(file);
@@ -67,6 +70,9 @@ function resetLists () {
     directoryList = [];
 }
 
+
+
+
 /*
  * Get number of items in a directory.
  * This is a dumb length, in the sense that it doesn't do any
@@ -75,31 +81,34 @@ function resetLists () {
  * @param cb (function) callback function to process result
 */
 function getNumItemsInDir(dirPath, cb) {
-    fs.readdir(dirPath, function (err, files) {
-        if (err)
-            cb(err);
+    fs.readdir(dirPath, function handleFiles (err, files) {
+        if (err) {
+            console.error("error reading directory: " + dirPath);
+            cb(err, null);
+        }
         else {
             var count = 0;
-            async.each(files, function (fileName, callback) {
+            async.each(files, function countFile (fileName, callback) {
                 var p = path.join(dirPath, fileName);
-                fs.stat(p, function (err, stats) {
-                    if (err)
+                fs.stat(p, function handleItemStats (err, stats) {
+                    if (err) {
+                        console.error("error getting directory stats for: " + p);
                         callback(err);
-                    else {
-                        if (stats.isDirectory() && fileName[0] != '.') {
-                            count++;
-                        }else {
-                            if (validFile(fileName))
-                                count++;
-                        }
                     }
-                    callback();
+                    else {
+                        if (stats.isDirectory() && fileName[0] != '.')
+                            count++;
+                        else if (stats.isFile() && validFile(fileName))
+                            count++;
+                        callback();
+                    }
+
                 });
-            }, function (err) {
+            }, function handledEveryItemOrError (err) {
                 if (err)
-                    cb(err)
+                    cb(err, null)
                 else {
-                    cb(count);
+                    cb(null, count);
                 }
             });
         }
@@ -123,11 +132,14 @@ function addFileToList(pathToFile, fileName, cb) {
 /* depth first recursive file list
  * goDeeper controls if subdirectories should be followed or not.
  * if it's false, it will simply add the directory, just like it lists files
+ * cb has one optional parameter: err
  */
 function parseDir(dir, goDeeper, cb) {
     fs.readdir(dir, function (err, files) {
-        if (err)
+        if (err) {
+            console.error("error reading directory: " + dir);
             cb(err);
+        }
         else
             handleFiles(dir, files, goDeeper, cb);
     });
@@ -144,21 +156,24 @@ function parseDir(dir, goDeeper, cb) {
  *                           subdirectories or not. If goDeeper is true,
                              every subdirectory will be browsed, and fileList
                              will contain the entire file tree, starting from dir.
- * @param cb (function) callback function. Lets the caller decide what to do once
-                         the directory has been browsed, and fileList is filled 
+ * @param cb (function) callback function. Can be invoked with cb(err) in case of error,
+ *                      or cb() for success 
  */
 function handleFiles(dir, files, goDeeper, cb) {
     var file = files.shift();
     if (file) {
         var p = path.join(dir, file);
-        fs.stat(p, function(err, stats) {
-            if (err)
+        fs.stat(p, function handleDirectoryInfo (err, stats) {
+            if (err) {
+                console.error("error reading directory information: " + p);
                 cb(err);
+            }
             else {
                 if (stats.isDirectory()) {
                     if (goDeeper) {
                         //parse the directory then
-                        parseDir(p, goDeeper, function(err) {
+                        //pretty sure I could replace all this with parseDir(p, goDeeper, cb);
+                        parseDir(p, goDeeper, function (err) {
                             if (err)
                                 cb(err);
                             else
@@ -168,17 +183,21 @@ function handleFiles(dir, files, goDeeper, cb) {
                         //add the directory to the directoryList, then move on without going into the directory
                         //skip hidden folders
                         if (file[0] != '.') {
-                            getNumItemsInDir(p, function(numItems) {
-                                //no full paths for now
-                                //if I want to use variables for my keys, I have to do this stupid
-                                //multiline assignment to the object
-                                var dirItem = {};
-                                dirItem[FOLDERS_DIR_KEY] = file;
-                                dirItem[FOLDERS_DIR_NUM_ITEMS] = numItems;
-                                directoryList.push(dirItem);
-                                handleFiles(dir, files, goDeeper, cb);
+                            getNumItemsInDir(p, function (err, numItems) {
+                                if (err) {
+                                    console.error("error getting number of items in directory: " + p);
+                                    cb(err);
+                                } else {
+                                    //don't send full paths, just file name
+                                    //add item to global dirItem array
+                                    var dirItem = {};
+                                    dirItem[FOLDERS_DIR_KEY] = file;
+                                    dirItem[FOLDERS_DIR_NUM_ITEMS] = numItems;
+                                    directoryList.push(dirItem);
+                                    handleFiles(dir, files, goDeeper, cb);
+                                }
                             });
-                        }else {
+                        }else { //move on to the next file/folder
                             handleFiles(dir, files, goDeeper, cb);
                         }
                     }
@@ -187,6 +206,8 @@ function handleFiles(dir, files, goDeeper, cb) {
                         //move on to the next file
                         handleFiles(dir, files, goDeeper, cb);
                     });
+                }else {
+                    console.log("item is neither a directory nor a file: " + p);
                 }
             }
         });
@@ -195,16 +216,18 @@ function handleFiles(dir, files, goDeeper, cb) {
     }
 }
 
+/* cb can be invoked with cb(err, null) in case of an error, or cb(null, dirInfo) for success*/
 function browse(dir, cb) {
     resetLists();
     parseDir(dir, false, function (err) {
-        if (err)
+        if (err) {
             console.error("Error parsing directory: " + dir);
-        else {
+            cb(err, null);
+        } else {
             var dirInfo = {};
             dirInfo[FOLDERS_KEY] = directoryList;
             dirInfo[VIDEOS_KEY] = fileList;
-            cb(dirInfo);
+            cb(null, dirInfo);
         }
     });
 }
