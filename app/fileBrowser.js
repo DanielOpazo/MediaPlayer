@@ -157,7 +157,9 @@ function parseDir(dir, goDeeper, cb) {
                              every subdirectory will be browsed, and fileList
                              will contain the entire file tree, starting from dir.
  * @param cb (function) callback function. Can be invoked with cb(err) in case of error,
- *                      or cb() for success 
+ *                      or cb() for success
+ * Note: I considered refactoring this function, but I thought it made the control flow
+ *       harder to read if I moved the recursive calls to their own functions. 
  */
 function handleFiles(dir, files, goDeeper, cb) {
     var file = files.shift();
@@ -208,10 +210,11 @@ function handleFiles(dir, files, goDeeper, cb) {
                     });
                 }else {
                     console.log("item is neither a directory nor a file: " + p);
+                    handleFiles(dir, files, goDeeper, cb);
                 }
             }
         });
-    }else {
+    }else { //processed all the files
         cb();
     }
 }

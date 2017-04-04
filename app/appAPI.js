@@ -8,23 +8,32 @@ var app = express();
 const vlc = require('./vlcAPI.js');
 var player = vlc.startVlc();
 
-
-/* This seems fairly robust. It kills vlc, and exits normally, eg. closing the server */
-process.on('SIGINT', function ()  {
-    console.log('Received SIGINT. Killing VLC process.');
-    player.kill('SIGINT');
-    process.exit();
-});
-
-process.on('exit', function (code) {
-  console.log(`About to exit with code: ${code}`);
-});
-
-
 const fb = require('./fileBrowser.js');
 
 var os = require("os");
 var nif = os.networkInterfaces();
+
+/* This seems fairly robust. It kills vlc, and exits normally, eg. closing the server */
+process.on('SIGINT', function ()  {
+    console.log('Received SIGINT. Killing VLC process.');
+    cleanup();
+});
+
+process.on('exit', function (code) {
+  console.log("About to exit with code:" + code);
+});
+
+/* close resources on hard crash */
+process.on('uncaughtException', function (err) {
+    console.error('Uncaught exception', err);
+    cleanup();
+});
+
+/* When manually closing the process, close resources */
+function cleanup() {
+    player.kill('SIGINT');
+    process.exit();
+}
 
 function getIPv4Address() {
     var ipv4address = "";
@@ -46,6 +55,10 @@ function getIPv4Address() {
     });
     return ipv4address;
 }
+
+/* Middlewares */
+
+/* Routers */
 
 app.get('/browse', function (req, res) {
     console.log("received browse command from " + req.ip + " with url parameter dir = " + req.query.dir);
@@ -143,12 +156,30 @@ app.get('/command/volume', function (req, res) {//this needs validation to not s
     res.send();
 });
 
+app.get('/error', function (req, res) {
+    process.nextTick(function() {
+      throw new Error('whoops');
+   });
+});
+
+/* Error Handlers */
+
+/* default handler. handles exceptions from nodejs call stack, not asynchronous APIs */
+app.use(function errorHandler (err, request, response, next) {
+    console.error(err);
+    response.status(500).send('Something broke!');
+});
+
 function startServer(port) {
-    var server = app.listen(8081, function() { //what if this fails?
-        var host = server.address().address;
-        var port = server.address().port;
-        console.log("Server listening at http://%s:%s", host, port);
-    });
+    try {
+        var server = app.listen(8081, function() {
+            var host = server.address().address;
+            var port = server.address().port;
+            console.log("Server listening at http://%s:%s", host, port);
+        });
+    } catch (err) {
+        console.error("error trying to start server", err);
+    }
 }
 
 /* externally visible. Called by index.js of app folder */
