@@ -4,7 +4,7 @@
 
 /* child_process will be used to start the VLC process */
 var child_process = require('child_process');
-/* http is used to communicate with VLCs API */
+/* http is used to communicate with VLC's API */
 var http = require('http');
 
 
@@ -16,14 +16,6 @@ options = {
 	port : '9090',
 	password: 'password'
 };
-
-/* module.exports allows this function to be called from another file
- * each command is returned as the value in an array, where the key is the name of the command
- * supported commands are:
- *  pause
- *  stop
- *  play
- */
 
 /*
  * initialize vlc in a subprocess, and return the vlc instance object
@@ -64,10 +56,6 @@ function startVlc() {
 }
 
 /* functions that talk to VLC   */
-
-function close (player) {
-    player.kill();
-}
 
 /* toggle pause/play */
 function pause (cb) {
