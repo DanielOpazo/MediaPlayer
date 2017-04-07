@@ -2,58 +2,11 @@
  * created by Daniel Opazo, 2016/12/12
  */
 
-/* child_process will be used to start the VLC process */
-var child_process = require('child_process');
 /* http is used to communicate with VLC's API */
 var http = require('http');
 
-
-/* Globals */
-/* options passed to vlc when it is started, and the location of the executable */
-options = {
-	player: '/usr/bin/cvlc',
-	communication: 'http',
-	port : '9090',
-	password: 'password'
-};
-
-/*
- * initialize vlc in a subprocess, and return the vlc instance object
- */
-function startVlc() {
-    /* puts the arguments to vlc process in proper format */
-    var pargs = [];
-
-    if (options.communication !== undefined) {
-		pargs.push('-I');
-		pargs.push(options.communication);
-	}
-
-	if (options.port !== undefined) {
-		pargs.push('--http-port');
-		pargs.push(options.port);
-	}
-
-	if (options.password !== undefined) {
-		pargs.push('--http-password');
-		pargs.push(options.password);
-	}
-
-    /* start the vlc process */
-	var player = child_process.spawn(options.player, pargs);
-
-	//for now, send stderr to console.log
-	player.stderr.on('data', function(data) {
-		console.log('ERROR ' + data);
-	});
-
-	//for now, send stdout to console.log
-	player.stdout.on('data', function(data) {
-		console.log('OUT ' + data);
-	});
-
-    return player;
-}
+/* vlc http server parameters */
+const options = require('./vlcConfig.json');
 
 /* functions that talk to VLC   */
 
@@ -87,7 +40,7 @@ function seek (seconds, cb) {
     apiCall(options, 'seek', { val: seconds }, cb);
 }
 
-function status (cb) { //not sure how frequently this should be queried
+function status (cb) {
     apiCall(options, '', {}, function(res) { //need to handle an error here if vlc isn't running
         var full = '';
         res.on('data', function(data) {
@@ -107,7 +60,6 @@ function volume (vol, cb) {
 /* externally visible functions */
 module.exports.emptyPlaylist = emptyPlaylist;
 module.exports.fullscreen = fullscreen;
-module.exports.startVlc = startVlc
 module.exports.pause = pause;
 module.exports.play = play;
 module.exports.seek = seek;

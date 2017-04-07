@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-const vlc = require('./vlcAPI.js');
+const vlc = require('./vlcControl.js');
 //var player = vlc.player; //question is is this the same one
 
 var os = require("os");

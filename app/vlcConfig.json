@@ -1,0 +1,6 @@
+{
+  "player": "/usr/bin/cvlc",
+  "communication": "http",
+  "port": 9090,
+  "password": "password"
+}

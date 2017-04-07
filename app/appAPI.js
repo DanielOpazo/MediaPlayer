@@ -2,8 +2,8 @@ var express = require('express');
 var app = express();
 
 /* start the vlc subprocess */
-const vlc = require('./vlcAPI.js');
-var player = vlc.startVlc();
+const vlcProcess = require('./vlcProcess.js');
+var player = vlcProcess.startVlc();
 
 /* routers */
 const command = require('./command.js');
@@ -53,15 +53,11 @@ app.use(function errorHandler (err, request, response, next) {
 });
 
 function startServer(port) {
-    try {
-        var server = app.listen(8081, function() {
-            var host = server.address().address;
-            var port = server.address().port;
-            console.log("Server listening at http://%s:%s", host, port);
-        });
-    } catch (err) {
-        console.error("error trying to start server", err);
-    }
+    var server = app.listen(8081, function() {
+        var host = server.address().address;
+        var port = server.address().port;
+        console.log("Server listening at http://%s:%s", host, port);
+    });
 }
 
 /* externally visible. Called by index.js of app folder */
