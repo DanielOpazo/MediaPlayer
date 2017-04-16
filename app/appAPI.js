@@ -1,7 +1,9 @@
 var express = require('express');
 var app = express();
 
-//var winston = require('../log/loggers.js');
+/* logger */
+var winston = require('winston');
+var logger = winston.loggers.get('appAPI');
 
 /* start the vlc subprocess */
 const vlcProcess = require('./vlcProcess.js');
@@ -26,23 +28,23 @@ app.get('/error', function (req, res) {
 
 /* default handler. handles exceptions from nodejs call stack, not asynchronous APIs */
 app.use(function errorHandler (err, request, response, next) {
-    console.error(err);
+    logger.error(err);
     response.status(500).send('Something broke!');
 });
 
 /* This seems fairly robust. It kills vlc, and exits normally, eg. closing the server */
 process.on('SIGINT', function ()  {
-    console.log('Received SIGINT. Killing VLC process.');
+    logger.info('Received SIGINT. Killing VLC process.');
     cleanup();
 });
 
 process.on('exit', function (code) {
-  console.log("About to exit with code:" + code);
+  logger.info("About to exit with code:" + code);
 });
 
 /* close resources on hard crash */
 process.on('uncaughtException', function (err) {
-    console.error('Uncaught exception', err);
+    logger.error('Uncaught exception', err);
     cleanup();
 });
 
@@ -56,7 +58,7 @@ function startServer(port) {
     var server = app.listen(port, function() {
         var host = server.address().address;
         var port = server.address().port;
-        console.log("Server listening at http://%s:%s", host, port);
+        logger.info("Server listening at http://%s:%s", host, port);
     });
 }
 
