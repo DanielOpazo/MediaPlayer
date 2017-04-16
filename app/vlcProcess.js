@@ -8,9 +8,6 @@ const options = require('./vlcConfig.json');
 var winston = require('winston');
 var logger = winston.loggers.get('vlcProcess');
 
-logger.info('logging info from vlcProcess.js');
-logger.error('logging error from vlcProcess.js');
-
 /*
  * initialize vlc in a subprocess, and return the vlc instance object
  */
@@ -35,15 +32,14 @@ function startVlc() {
 
     /* start the vlc process */
     var player = child_process.spawn(options.player, pargs);
+    logger.info("vlc child process started");
 
-    //for now, send stderr to console.log
     player.stderr.on('data', function(data) {
-	    console.error('ERROR ' + data);
+	    logger.error(data.toString());
     });
 
-    //for now, send stdout to console.log
     player.stdout.on('data', function(data) {
-	    console.log('OUT ' + data);
+        logger.info(data.toString());
     });
 
     return player;

@@ -11,7 +11,8 @@ var commonOptions = {
     maxFiles: 10,
     json: false,
     tailable: true,
-    zippedArchive: true
+    zippedArchive: true,
+    prettyPrint: true
 }
 
 /* id of each module that will have a logger */
