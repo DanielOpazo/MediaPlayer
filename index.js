@@ -1,1 +1,2 @@
-require('./app/index');
+require('./log/loggers.js');
+require('./app/index.js');

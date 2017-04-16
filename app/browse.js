@@ -9,6 +9,7 @@ router.get('/', function (req, res) {
     fb.browse(req.query.dir, function browseDir (err, retVal) {
         if (err) {
             console.error("error browsing directory: " + req.query.dir);
+            res.status(500).send('error browsing directory');
         } else {
             console.log(retVal);
             res.json(retVal);

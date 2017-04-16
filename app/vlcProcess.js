@@ -4,6 +4,13 @@ var child_process = require('child_process');
 /* vlc http server parameters */
 const options = require('./vlcConfig.json');
 
+/* logger */
+var winston = require('winston');
+var logger = winston.loggers.get('vlcProcess');
+
+logger.info('logging info from vlcProcess.js');
+logger.error('logging error from vlcProcess.js');
+
 /*
  * initialize vlc in a subprocess, and return the vlc instance object
  */

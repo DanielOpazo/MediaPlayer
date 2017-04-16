@@ -1,6 +1,8 @@
 var express = require('express');
 var app = express();
 
+//var winston = require('../log/loggers.js');
+
 /* start the vlc subprocess */
 const vlcProcess = require('./vlcProcess.js');
 var player = vlcProcess.startVlc();
@@ -8,6 +10,25 @@ var player = vlcProcess.startVlc();
 /* routers */
 const command = require('./command.js');
 const browse = require('./browse.js');
+
+app.use('/command', command);
+app.use('/browse', browse);
+
+
+//for testing
+app.get('/error', function (req, res) {
+    process.nextTick(function() {
+      throw new Error('whoops');
+   });
+});
+
+/* Error Handlers */
+
+/* default handler. handles exceptions from nodejs call stack, not asynchronous APIs */
+app.use(function errorHandler (err, request, response, next) {
+    console.error(err);
+    response.status(500).send('Something broke!');
+});
 
 /* This seems fairly robust. It kills vlc, and exits normally, eg. closing the server */
 process.on('SIGINT', function ()  {
@@ -31,29 +52,8 @@ function cleanup() {
     process.exit();
 }
 
-
-/* Routers */
-
-app.use('/command', command);
-
-app.use('/browse', browse);
-
-app.get('/error', function (req, res) {
-    process.nextTick(function() {
-      throw new Error('whoops');
-   });
-});
-
-/* Error Handlers */
-
-/* default handler. handles exceptions from nodejs call stack, not asynchronous APIs */
-app.use(function errorHandler (err, request, response, next) {
-    console.error(err);
-    response.status(500).send('Something broke!');
-});
-
 function startServer(port) {
-    var server = app.listen(8081, function() {
+    var server = app.listen(port, function() {
         var host = server.address().address;
         var port = server.address().port;
         console.log("Server listening at http://%s:%s", host, port);

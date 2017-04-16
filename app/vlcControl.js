@@ -23,7 +23,7 @@ function play (media, cb) {
     if (cb !== undefined) {
         apiCall(options, 'in_play', { input: media }, cb);
     }
-    setTimeout(function() { //I don't like relying on timers
+    setTimeout(function() { //I don't like relying on timers //TODO only do this if it's not already fullscreen
         apiCall(options, 'fullscreen', {}, undefined);
     }, 500);
 }
