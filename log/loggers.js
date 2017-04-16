@@ -16,7 +16,7 @@ var commonOptions = {
 }
 
 /* id of each module that will have a logger */
-var ids = ["vlcProcess", "vlcControl"]
+var ids = ["vlcProcess", "vlcControl", "fileBrowser"]
 
 var loggers = {};
 

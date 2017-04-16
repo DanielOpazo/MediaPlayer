@@ -3,6 +3,10 @@ var path = require("path");
 var ffmpeg = require('fluent-ffmpeg');
 var async = require("async");
 
+/* logger */
+var winston = require('winston');
+var logger = winston.loggers.get('vlcControl');
+
 /*
  * Schema definitions
  * Schema for folder objects:
@@ -83,7 +87,7 @@ function resetLists () {
 function getNumItemsInDir(dirPath, cb) {
     fs.readdir(dirPath, function handleFiles (err, files) {
         if (err) {
-            console.error("error reading directory: " + dirPath);
+            logger.error("error reading directory: " + dirPath);
             cb(err, null);
         }
         else {
@@ -92,7 +96,7 @@ function getNumItemsInDir(dirPath, cb) {
                 var p = path.join(dirPath, fileName);
                 fs.stat(p, function handleItemStats (err, stats) {
                     if (err) {
-                        console.error("error getting directory stats for: " + p);
+                        logger.error("error getting directory stats for: " + p);
                         callback(err);
                     }
                     else {
@@ -137,7 +141,7 @@ function addFileToList(pathToFile, fileName, cb) {
 function parseDir(dir, goDeeper, cb) {
     fs.readdir(dir, function (err, files) {
         if (err) {
-            console.error("error reading directory: " + dir);
+            logger.error("error reading directory: " + dir);
             cb(err);
         }
         else
@@ -167,7 +171,7 @@ function handleFiles(dir, files, goDeeper, cb) {
         var p = path.join(dir, file);
         fs.stat(p, function handleDirectoryInfo (err, stats) {
             if (err) {
-                console.error("error reading directory information: " + p);
+                logger.error("error reading directory information: " + p);
                 cb(err);
             }
             else {
@@ -187,7 +191,7 @@ function handleFiles(dir, files, goDeeper, cb) {
                         if (file[0] != '.') {
                             getNumItemsInDir(p, function (err, numItems) {
                                 if (err) {
-                                    console.error("error getting number of items in directory: " + p);
+                                    logger.error("error getting number of items in directory: " + p);
                                     cb(err);
                                 } else {
                                     //don't send full paths, just file name
@@ -209,7 +213,7 @@ function handleFiles(dir, files, goDeeper, cb) {
                         handleFiles(dir, files, goDeeper, cb);
                     });
                 }else {
-                    console.log("item is neither a directory nor a file: " + p);
+                    logger.info("item is neither a directory nor a file: " + p);
                     handleFiles(dir, files, goDeeper, cb);
                 }
             }
@@ -224,7 +228,7 @@ function browse(dir, cb) {
     resetLists();
     parseDir(dir, false, function (err) {
         if (err) {
-            console.error("Error parsing directory: " + dir);
+            logger.error("Error parsing directory: " + dir);
             cb(err, null);
         } else {
             var dirInfo = {};
