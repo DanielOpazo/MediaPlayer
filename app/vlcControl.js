@@ -8,6 +8,10 @@ var http = require('http');
 /* vlc http server parameters */
 const options = require('./vlcConfig.json');
 
+/* logger */
+var winston = require('winston');
+var logger = winston.loggers.get('vlcControl');
+
 /* functions that talk to VLC   */
 
 /* toggle pause/play */
@@ -23,7 +27,7 @@ function play (media, cb) {
     if (cb !== undefined) {
         apiCall(options, 'in_play', { input: media }, cb);
     }
-    setTimeout(function() { //I don't like relying on timers //TODO only do this if it's not already fullscreen
+    setTimeout(function() { //TODO only do this if it's not already fullscreen
         apiCall(options, 'fullscreen', {}, undefined);
     }, 500);
 }
@@ -84,8 +88,7 @@ function apiCall(options, command, args, callback) {
 
     command = '?command=' + command;
 	
-	//debug	
-	console.log(command + urlArgs);
+	logger.info(command + urlArgs);
 
 	/* call the vlc api using http */
 	http.get({
