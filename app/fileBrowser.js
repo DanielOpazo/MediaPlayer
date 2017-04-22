@@ -1,11 +1,11 @@
-var fs = require("fs");
-var path = require("path");
-var ffmpeg = require('fluent-ffmpeg');
-var async = require("async");
+var fs = require('fs')
+var path = require('path')
+var ffmpeg = require('fluent-ffmpeg')
+var async = require('async')
 
 /* logger */
-var winston = require('winston');
-var logger = winston.loggers.get('vlcControl');
+var winston = require('winston')
+var logger = winston.loggers.get('vlcControl')
 
 /*
  * Schema definitions
@@ -16,9 +16,9 @@ var logger = winston.loggers.get('vlcControl');
       "numItems":<int>
     }
 */
-var FOLDERS_KEY = "folders";
-var FOLDERS_DIR_KEY = "name";
-var FOLDERS_DIR_NUM_ITEMS = "numItems"
+var FOLDERS_KEY = 'folders'
+var FOLDERS_DIR_KEY = 'name'
+var FOLDERS_DIR_NUM_ITEMS = 'numItems'
 
 /*
  * Schema for video objects
@@ -28,26 +28,26 @@ var FOLDERS_DIR_NUM_ITEMS = "numItems"
  *     "duration":<int>
  *  },
 */
-var VIDEOS_KEY = "videos";
-var VIDEOS_TITLE_KEY = "name";
-var VIDEOS_LENGTH_KEY = "duration";
+var VIDEOS_KEY = 'videos'
+var VIDEOS_TITLE_KEY = 'name'
+var VIDEOS_LENGTH_KEY = 'duration'
 
 /*
  * Global list definitions
 */
-var fileList = [];
-var directoryList = [];
+var fileList = []
+var directoryList = []
 
 /*
  * Read metadata using ffmpeg
  * @param filePath (string) path to file to be queried
  * @param cb (function) callback function that is passed the metadata object
 */
-//doesn't handle error
-function getMetaData(filePath, cb) {
-    ffmpeg.ffprobe(filePath, function(err, metadata) {
-        cb(metadata);
-    });
+// doesn't handle error
+function getMetaData (filePath, cb) {
+  ffmpeg.ffprobe(filePath, function (err, metadata) {
+    cb(metadata)
+  })
 }
 
 /*
@@ -55,82 +55,71 @@ function getMetaData(filePath, cb) {
  * @param filePath (string) path to file to be queried
  * @param cb (function) callback function that is passed the file length (in seconds)
 */
-//doesn't handle error
-function getMediaFileDuration(filePath, cb) {
-    getMetaData(filePath, function(metadata) {
-        cb(metadata["format"]["duration"]);
-    });
+// doesn't handle error
+function getMediaFileDuration (filePath, cb) {
+  getMetaData(filePath, function (metadata) {
+    cb(metadata['format']['duration'])
+  })
 }
 
-//checks the file extension against the list of allowed filetypes
-//what if file is null here
-function validFile(file) {
-    var extensionPatt = /\.mp4|mkv|avi$/i;
-    return extensionPatt.test(file);
+// checks the file extension against the list of allowed filetypes
+// what if file is null here
+function validFile (file) {
+  var extensionPatt = /\.mp4|mkv|avi$/i
+  return extensionPatt.test(file)
 }
 
 function resetLists () {
-    fileList = [];
-    directoryList = [];
+  fileList = []
+  directoryList = []
 }
-
-
-
 
 /*
  * Get number of items in a directory.
  * This is a dumb length, in the sense that it doesn't do any
- * validation on what the items in the directory are. 
+ * validation on what the items in the directory are.
  * @param dirPath (string) relative path of directory to browse
  * @param cb (function) callback function to process result
 */
-function getNumItemsInDir(dirPath, cb) {
-    fs.readdir(dirPath, function handleFiles (err, files) {
-        if (err) {
-            logger.error("error reading directory: " + dirPath);
-            cb(err, null);
+function getNumItemsInDir (dirPath, cb) {
+  fs.readdir(dirPath, function handleFiles (err, files) {
+    if (err) {
+      logger.error('error reading directory: ' + dirPath)
+      cb(err, null)
+    } else {
+      var count = 0
+      async.each(files, function countFile (fileName, callback) {
+        var p = path.join(dirPath, fileName)
+        fs.stat(p, function handleItemStats (err, stats) {
+          if (err) {
+            logger.error('error getting directory stats for: ' + p)
+            callback(err)
+          } else {
+            if (stats.isDirectory() && fileName[0] !== '.') { count++ } else if (stats.isFile() && validFile(fileName)) { count++ }
+            callback()
+          }
+        })
+      }, function handledEveryItemOrError (err) {
+        if (err) { cb(err, null) } else {
+          cb(null, count)
         }
-        else {
-            var count = 0;
-            async.each(files, function countFile (fileName, callback) {
-                var p = path.join(dirPath, fileName);
-                fs.stat(p, function handleItemStats (err, stats) {
-                    if (err) {
-                        logger.error("error getting directory stats for: " + p);
-                        callback(err);
-                    }
-                    else {
-                        if (stats.isDirectory() && fileName[0] != '.')
-                            count++;
-                        else if (stats.isFile() && validFile(fileName))
-                            count++;
-                        callback();
-                    }
-
-                });
-            }, function handledEveryItemOrError (err) {
-                if (err)
-                    cb(err, null)
-                else {
-                    cb(null, count);
-                }
-            });
-        }
-    });
+      })
+    }
+  })
 }
 
-function addFileToList(pathToFile, fileName, cb) {
-    if (validFile(pathToFile)) {
-        getMediaFileDuration(pathToFile, function(duration) {
-            var fileItem = {};
-            fileItem[VIDEOS_TITLE_KEY] = fileName;
-            fileItem[VIDEOS_LENGTH_KEY] = duration;
-            fileList.push(fileItem);
-            cb();
-        });
-    }else {
-        cb();
-    }
+function addFileToList (pathToFile, fileName, cb) {
+  if (validFile(pathToFile)) {
+    getMediaFileDuration(pathToFile, function (duration) {
+      var fileItem = {}
+      fileItem[VIDEOS_TITLE_KEY] = fileName
+      fileItem[VIDEOS_LENGTH_KEY] = duration
+      fileList.push(fileItem)
+      cb()
+    })
+  } else {
+    cb()
+  }
 }
 
 /* depth first recursive file list
@@ -138,15 +127,13 @@ function addFileToList(pathToFile, fileName, cb) {
  * if it's false, it will simply add the directory, just like it lists files
  * cb has one optional parameter: err
  */
-function parseDir(dir, goDeeper, cb) {
-    fs.readdir(dir, function (err, files) {
-        if (err) {
-            logger.error("error reading directory: " + dir);
-            cb(err);
-        }
-        else
-            handleFiles(dir, files, goDeeper, cb);
-    });
+function parseDir (dir, goDeeper, cb) {
+  fs.readdir(dir, function (err, files) {
+    if (err) {
+      logger.error('error reading directory: ' + dir)
+      cb(err)
+    } else { handleFiles(dir, files, goDeeper, cb) }
+  })
 }
 
 /* helper function for parseDir.
@@ -156,91 +143,87 @@ function parseDir(dir, goDeeper, cb) {
  * variable array fileList, or directoryList
  * @param dir (string) The directory to browse
  * @param files (array) The list of files/directories in the directory
- * @param goDeeper (boolean) Controls whether the browsing should go into 
+ * @param goDeeper (boolean) Controls whether the browsing should go into
  *                           subdirectories or not. If goDeeper is true,
                              every subdirectory will be browsed, and fileList
                              will contain the entire file tree, starting from dir.
  * @param cb (function) callback function. Can be invoked with cb(err) in case of error,
  *                      or cb() for success
  * Note: I considered refactoring this function, but I thought it made the control flow
- *       harder to read if I moved the recursive calls to their own functions. 
+ *       harder to read if I moved the recursive calls to their own functions.
  */
-function handleFiles(dir, files, goDeeper, cb) {
-    var file = files.shift();
-    if (file) {
-        var p = path.join(dir, file);
-        fs.stat(p, function handleDirectoryInfo (err, stats) {
-            if (err) {
-                logger.error("error reading directory information: " + p);
-                cb(err);
-            }
-            else {
-                if (stats.isDirectory()) {
-                    if (goDeeper) {
-                        //parse the directory then
-                        //pretty sure I could replace all this with parseDir(p, goDeeper, cb);
-                        parseDir(p, goDeeper, function (err) {
-                            if (err)
-                                cb(err);
-                            else
-                                handleFiles(dir, files, goDeeper, cb);
-                        });
-                    }else {
-                        //add the directory to the directoryList, then move on without going into the directory
-                        //skip hidden folders
-                        if (file[0] != '.') {
-                            getNumItemsInDir(p, function (err, numItems) {
-                                if (err) {
-                                    logger.error("error getting number of items in directory: " + p);
-                                    cb(err);
-                                } else {
-                                    //don't send full paths, just file name
-                                    //add item to global dirItem array
-                                    var dirItem = {};
-                                    dirItem[FOLDERS_DIR_KEY] = file;
-                                    dirItem[FOLDERS_DIR_NUM_ITEMS] = numItems;
-                                    directoryList.push(dirItem);
-                                    handleFiles(dir, files, goDeeper, cb);
-                                }
-                            });
-                        }else { //move on to the next file/folder
-                            handleFiles(dir, files, goDeeper, cb);
-                        }
-                    }
-                }else if (stats.isFile()) {
-                    addFileToList(p, file, function() {
-                        //move on to the next file
-                        handleFiles(dir, files, goDeeper, cb);
-                    });
-                }else {
-                    logger.info("item is neither a directory nor a file: " + p);
-                    handleFiles(dir, files, goDeeper, cb);
+function handleFiles (dir, files, goDeeper, cb) {
+  var file = files.shift()
+  if (file) {
+    var p = path.join(dir, file)
+    fs.stat(p, function handleDirectoryInfo (err, stats) {
+      if (err) {
+        logger.error('error reading directory information: ' + p)
+        cb(err)
+      } else {
+        if (stats.isDirectory()) {
+          if (goDeeper) {
+                        // parse the directory then
+                        // pretty sure I could replace all this with parseDir(p, goDeeper, cb);
+            parseDir(p, goDeeper, function (err) {
+              if (err) { cb(err) } else { handleFiles(dir, files, goDeeper, cb) }
+            })
+          } else {
+                        // add the directory to the directoryList, then move on without going into the directory
+                        // skip hidden folders
+            if (file[0] !== '.') {
+              getNumItemsInDir(p, function (err, numItems) {
+                if (err) {
+                  logger.error('error getting number of items in directory: ' + p)
+                  cb(err)
+                } else {
+                                    // don't send full paths, just file name
+                                    // add item to global dirItem array
+                  var dirItem = {}
+                  dirItem[FOLDERS_DIR_KEY] = file
+                  dirItem[FOLDERS_DIR_NUM_ITEMS] = numItems
+                  directoryList.push(dirItem)
+                  handleFiles(dir, files, goDeeper, cb)
                 }
+              })
+            } else { // move on to the next file/folder
+              handleFiles(dir, files, goDeeper, cb)
             }
-        });
-    }else { //processed all the files
-        cb();
-    }
+          }
+        } else if (stats.isFile()) {
+          addFileToList(p, file, function () {
+                        // move on to the next file
+            handleFiles(dir, files, goDeeper, cb)
+          })
+        } else {
+          logger.info('item is neither a directory nor a file: ' + p)
+          handleFiles(dir, files, goDeeper, cb)
+        }
+      }
+    })
+  } else { // processed all the files
+    cb()
+  }
 }
 
-/* cb can be invoked with cb(err, null) in case of an error, or cb(null, dirInfo) for success*/
-function browse(dir, cb) {
-    resetLists();
-    parseDir(dir, false, function (err) {
-        if (err) {
-            logger.error("Error parsing directory: " + dir);
-            cb(err, null);
-        } else {
-            var dirInfo = {};
-            dirInfo[FOLDERS_KEY] = directoryList;
-            dirInfo[VIDEOS_KEY] = fileList;
-            cb(null, dirInfo);
-        }
-    });
+/* cb can be invoked with cb(err, null) in case of an error, or cb(null, dirInfo) for success */
+function browse (dir, cb) {
+  resetLists()
+  parseDir(dir, false, function (err) {
+    if (err) {
+      logger.error('Error parsing directory: ' + dir)
+      cb(err, null)
+    } else {
+      var dirInfo = {}
+      dirInfo[FOLDERS_KEY] = directoryList
+      dirInfo[VIDEOS_KEY] = fileList
+      cb(null, dirInfo)
+    }
+  })
 }
 
 /*
  * externally visible function. Called in appAPI.js when a GET request to
  * /browse is made
  */
-module.exports.browse = browse;
+module.exports.browse = browse
