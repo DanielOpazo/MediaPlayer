@@ -91,9 +91,6 @@ function resetLists () {
 }
 
 /*
- * Get number of items in a directory.
- * This is a dumb length, in the sense that it doesn't do any
- * validation on what the items in the directory are.
  * @param dirPath (string) relative path of directory to browse
  * @param cb (function) callback function to process result
 */
@@ -177,16 +174,15 @@ function handleFiles (dir, files, goDeeper, cb) {
               getNumItemsInDir(p, function (err, numItems) {
                 if (err) {
                   logger.error('error getting number of items in directory: ' + p)
-                  cb(err)
                 } else {
-                                    // don't send full paths, just file name
-                                    // add item to global dirItem array
+                  // don't send full paths, just file name
+                  // add item to global dirItem array
                   var dirItem = {}
                   dirItem[FOLDERS_DIR_KEY] = file
                   dirItem[FOLDERS_DIR_NUM_ITEMS] = numItems
                   directoryList.push(dirItem)
-                  handleFiles(dir, files, goDeeper, cb)
                 }
+                handleFiles(dir, files, goDeeper, cb)
               })
             } else { // move on to the next file/folder
               handleFiles(dir, files, goDeeper, cb)
