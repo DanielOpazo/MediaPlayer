@@ -46,25 +46,41 @@ var directoryList = []
 // doesn't handle error
 function getMetaData (filePath, cb) {
   ffmpeg.ffprobe(filePath, function (err, metadata) {
-    cb(metadata)
+    if (err) {
+      logger.error('ffmpeg cannot get metadata for file: ' + filePath)
+      cb(null)
+    } else { cb(metadata) }
   })
 }
 
 /*
  * get file duration from ffmpeg metadata object
  * @param filePath (string) path to file to be queried
- * @param cb (function) callback function that is passed the file length (in seconds)
+ * @param cb (function) callback function that is passed the file duration (in seconds)
 */
-// doesn't handle error
 function getMediaFileDuration (filePath, cb) {
   getMetaData(filePath, function (metadata) {
-    cb(metadata['format']['duration'])
+    cb(metadata ? metadata['format']['duration'] : 0)
   })
+}
+
+function addFileToList (pathToFile, fileName, cb) {
+  if (validFileType(pathToFile)) {
+    getMediaFileDuration(pathToFile, function (duration) {
+      var fileItem = {}
+      fileItem[VIDEOS_TITLE_KEY] = fileName
+      fileItem[VIDEOS_LENGTH_KEY] = duration
+      fileList.push(fileItem)
+      cb()
+    })
+  } else {
+    cb()
+  }
 }
 
 // checks the file extension against the list of allowed filetypes
 // what if file is null here
-function validFile (file) {
+function validFileType (file) {
   var extensionPatt = /\.mp4|mkv|avi$/i
   return extensionPatt.test(file)
 }
@@ -95,7 +111,7 @@ function getNumItemsInDir (dirPath, cb) {
             logger.error('error getting directory stats for: ' + p)
             callback(err)
           } else {
-            if (stats.isDirectory() && fileName[0] !== '.') { count++ } else if (stats.isFile() && validFile(fileName)) { count++ }
+            if ((stats.isDirectory() && fileName[0] !== '.') || (stats.isFile() && validFileType(fileName))) { count++ }
             callback()
           }
         })
@@ -106,20 +122,6 @@ function getNumItemsInDir (dirPath, cb) {
       })
     }
   })
-}
-
-function addFileToList (pathToFile, fileName, cb) {
-  if (validFile(pathToFile)) {
-    getMediaFileDuration(pathToFile, function (duration) {
-      var fileItem = {}
-      fileItem[VIDEOS_TITLE_KEY] = fileName
-      fileItem[VIDEOS_LENGTH_KEY] = duration
-      fileList.push(fileItem)
-      cb()
-    })
-  } else {
-    cb()
-  }
 }
 
 /* depth first recursive file list
