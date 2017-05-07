@@ -28,7 +28,7 @@ function play (media, cb) {
     apiCall(options, 'in_play', { input: media }, cb)
   }
   setTimeout(function () { // TODO only do this if it's not already fullscreen
-    apiCall(options, 'fullscreen', {}, undefined)
+    setFullScreen()
   }, 500)
 }
 
@@ -52,7 +52,7 @@ function status (cb) {
     })
 
     res.on('end', function (e) {
-      cb(JSON.parse(full))
+      cb(JSON.parse(full)) //if this is already JSON, why parse it
     })
   })
 }
@@ -101,5 +101,19 @@ function apiCall (options, command, args, callback) {
     if (callback !== undefined) {
       callback(res)
     }
+  })
+}
+
+function setFullScreen () {
+  isFullScreen(function (err, isFull) {
+    if (!err && !isFull) {
+      apiCall(options, 'fullscreen', {}, undefined)
+    }
+  })
+}
+
+function isFullScreen (cb) {
+  status(function (statusJson) {
+    cb(null, statusJson['fullscreen'] === true)
   })
 }
