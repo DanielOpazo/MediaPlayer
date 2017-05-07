@@ -38,6 +38,11 @@ var VIDEOS_LENGTH_KEY = 'duration'
 var fileList = []
 var directoryList = []
 
+function resetLists () {
+  fileList = []
+  directoryList = []
+}
+
 /*
  * Read metadata using ffmpeg
  * @param filePath (string) path to file to be queried
@@ -64,9 +69,16 @@ function getMediaFileDuration (filePath, cb) {
   })
 }
 
-function addFileToList (pathToFile, fileName, cb) {
-  if (validFileType(pathToFile)) {
-    getMediaFileDuration(pathToFile, function (duration) {
+// checks the file extension against the list of allowed filetypes
+// what if file is null here
+function validFileType (file) {
+  var extensionPatt = /\.mp4|mkv|avi$/i
+  return extensionPatt.test(file)
+}
+
+function addFileToList (filePath, fileName, cb) {
+  if (validFileType(filePath)) {
+    getMediaFileDuration(filePath, function (duration) {
       var fileItem = {}
       fileItem[VIDEOS_TITLE_KEY] = fileName
       fileItem[VIDEOS_LENGTH_KEY] = duration
@@ -78,16 +90,18 @@ function addFileToList (pathToFile, fileName, cb) {
   }
 }
 
-// checks the file extension against the list of allowed filetypes
-// what if file is null here
-function validFileType (file) {
-  var extensionPatt = /\.mp4|mkv|avi$/i
-  return extensionPatt.test(file)
-}
-
-function resetLists () {
-  fileList = []
-  directoryList = []
+function addDirectoryToList (err, dirPath, dirName, numItems, cb) {
+  if (err) {
+    logger.error('error getting number of items in directory: ' + dirPath)
+  } else {
+    // don't send full paths, just file name
+    // add item to global dirItem array
+    var dirItem = {}
+    dirItem[FOLDERS_DIR_KEY] = dirName
+    dirItem[FOLDERS_DIR_NUM_ITEMS] = numItems
+    directoryList.push(dirItem)
+  }
+  cb()
 }
 
 /*
@@ -158,31 +172,23 @@ function handleFiles (dir, files, goDeeper, cb) {
     fs.stat(p, function handleDirectoryInfo (err, stats) {
       if (err) {
         logger.error('error reading directory information: ' + p)
-        cb(err)
+        handleFiles(dir, files, goDeeper, cb)
       } else {
         if (stats.isDirectory()) {
           if (goDeeper) {
-                        // parse the directory then
-                        // pretty sure I could replace all this with parseDir(p, goDeeper, cb);
+            // parse the directory then
+            // pretty sure I could replace all this with parseDir(p, goDeeper, cb);
             parseDir(p, goDeeper, function (err) {
               if (err) { cb(err) } else { handleFiles(dir, files, goDeeper, cb) }
             })
           } else {
-                        // add the directory to the directoryList, then move on without going into the directory
-                        // skip hidden folders
+            // add the directory to the directoryList, then move on without going into the directory
+            // skip hidden folders
             if (file[0] !== '.') {
               getNumItemsInDir(p, function (err, numItems) {
-                if (err) {
-                  logger.error('error getting number of items in directory: ' + p)
-                } else {
-                  // don't send full paths, just file name
-                  // add item to global dirItem array
-                  var dirItem = {}
-                  dirItem[FOLDERS_DIR_KEY] = file
-                  dirItem[FOLDERS_DIR_NUM_ITEMS] = numItems
-                  directoryList.push(dirItem)
-                }
-                handleFiles(dir, files, goDeeper, cb)
+                addDirectoryToList(err, p, file, numItems, function () {
+                  handleFiles(dir, files, goDeeper, cb)
+                })
               })
             } else { // move on to the next file/folder
               handleFiles(dir, files, goDeeper, cb)
@@ -190,7 +196,7 @@ function handleFiles (dir, files, goDeeper, cb) {
           }
         } else if (stats.isFile()) {
           addFileToList(p, file, function () {
-                        // move on to the next file
+            // move on to the next file
             handleFiles(dir, files, goDeeper, cb)
           })
         } else {
